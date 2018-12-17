@@ -2,6 +2,7 @@
 #include <nRF24L01.h>   //RF library
 #include <RF24.h>       //RF library
 #include "printf.h"
+#include <Wire.h>       // I2C communications
 
 // ******* RF INIT ********************************************************
 int ce = 7;   //  ce = pin 7
@@ -12,6 +13,7 @@ RF24 radio(ce,csn);
 const byte channelIdentifier[][6] = {"node1","node2"};
 // ************************************************************************
 
+int TARGET_I2C_ADDRESS = 42;
 
 typedef struct {
   int             nodeID;
@@ -21,17 +23,6 @@ typedef struct {
   float			      var2_float;
 } Payload;
 Payload theData;
-
-typedef struct {
-  int             nodeID;
-  int			        sensorID;
-  unsigned long   time;
-  float           var1_float;
-  float		        var2_float;
-  int             var4_int;
-} itoc_Send;
-itoc_Send theDataI2C;
-
 
 void setup()
 {
@@ -51,6 +42,8 @@ void setup()
   printf_begin();                                   // For debug
   radio.printDetails();                             // For debug
   Serial.println("...End Print Details");           // For debug
+
+  Wire.begin(); //start I2C as master (no address)
 }
 
 void loop()
@@ -74,8 +67,11 @@ void loop()
     Serial.println(theData.var1_float); // For debug
     Serial.print("var3_float = ");      // For debug
     Serial.println(theData.var2_float); // For debug
-  } else {
-    Serial.println("No Radio");
-  }
 
+    Serial.println("Sending data via I2C");
+    Wire.beginTransmission(TARGET_I2C_ADDRESS);
+    Wire.write((byte *) &theData, sizeof theData);
+    Wire.endTransmission();
+    Serial.println("Finished sending data to I2C");
+  }
 }
